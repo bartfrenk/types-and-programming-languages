@@ -40,6 +40,7 @@ isVal (TmAbs _) = True
 isVal _ = False
 
 -- |Small step evaluation of terms in the pure untyped lambda calculus.
+-- Call-by-value semantics?
 eval1 :: Term -> Term
 eval1 (TmApp (TmAbs t) v)
   | isVal v = termSubstTop v t
