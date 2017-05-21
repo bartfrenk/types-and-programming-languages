@@ -1,7 +1,7 @@
-{-| Implementation of the language of untyped arithmetic expressions as presented
-in chapter 3 of Types and Programming Languages. This is mostly a translation of
-the OCaml implementation in chapter 4 of the same book, except for the 'eval2'
-function, which is a solution to Exercise 4.2.2.
+{-|Implementation of the language of untyped arithmetic expressions as presented
+ in chapter 3 of Types and Programming Languages. This is mostly a translation
+ of the OCaml implementation in chapter 4 of the same book, except for the
+ 'eval2' function, which is a solution to Exercise 4.2.2.
 -}
 module Arith where
 
