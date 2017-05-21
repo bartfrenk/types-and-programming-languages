@@ -5,6 +5,8 @@
 -}
 module Untyped where
 
+import Data.Maybe
+
 type Index = Int
 
 -- |Representation of terms in the pure untyped lambda calculus.
@@ -37,28 +39,62 @@ termSubstTop s t =
 -- |Predicate for values.
 isVal :: Term -> Bool
 isVal (TmAbs _) = True
+isVal (TmVar _) = True
 isVal _ = False
 
--- |Small step evaluation of terms in the pure untyped lambda calculus.
--- Call-by-value semantics?
+-- |Strict small step evaluation of terms in the pure untyped lambda calculus.
 eval1 :: Term -> Term
 eval1 (TmApp (TmAbs t) v)
   | isVal v = termSubstTop v t
 eval1 (TmApp v t)
   | isVal v = TmApp v (eval1 t)
 eval1 (TmApp t1 t2) = TmApp (eval1 t1) t2
---eval1 (TmAbs t) = TmAbs (eval1 t)
 eval1 _ = error "NoRuleApplies"
 
+-- |Strict small step evaluation; evaluate abstraction body.
+evalMaybe :: Term -> Maybe Term
+evalMaybe (TmApp (TmAbs t) v)
+  | isVal v = Just $ termSubstTop v t
+evalMaybe (TmApp v t)
+  | isVal v = TmApp v <$> evalMaybe t
+evalMaybe (TmApp t1 t2) = flip TmApp t2 <$> evalMaybe t1
+evalMaybe (TmAbs t) = TmAbs <$> evalMaybe t
+evalMaybe _ = Nothing
 
+-- |Prints single steps of a reduction to normal form.
+printReductions :: Term -> IO ()
+printReductions t =
+  (print . fromJust) `mapM_` takeWhile isJust (iterate (>>= evalMaybe) (Just t))
+
+-- |Small step reduction to normal form.
+toNormalForm :: Term -> Term
+toNormalForm t = lastJust (iterate (>>= evalMaybe) (Just t))
+  where lastJust (Just x:xs) = takeLast' xs x
+        lastJust _ = error ""
+        takeLast' (Just z:zs) _ = takeLast' zs z
+        takeLast' _ acc = acc
+
+-- |Church numeral: 0
 c0 :: Term
 c0 = TmAbs $ TmAbs $ TmVar 0
 
+-- |Church numerals
+churchNumerals :: [Term]
+churchNumerals = iterate (toNormalForm . TmApp scc) c0
+
+-- |Church Boolean: True
+tru :: Term
+tru = TmAbs $ TmAbs $ TmVar 1
+
+-- |Church Boolean: False
+fls :: Term
+fls = TmAbs $ TmAbs $ TmVar 0
+
+-- |Logical conjunction on Church Booleans
+tmAnd :: Term
+tmAnd = TmAbs $ TmAbs $ TmApp (TmApp (TmVar 1) (TmVar 0)) fls
+
+-- |Successor function on Church numerals
 scc :: Term
 scc = TmAbs $ TmAbs $ TmAbs $ TmApp (TmVar 1)
   (TmApp (TmApp (TmVar 2) (TmVar 1)) (TmVar 0))
-
--- TODO: can we evaluate c1 to normal form?
-c1 :: Term
-c1 = eval1 (TmApp scc c0)
-
