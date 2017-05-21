@@ -42,6 +42,10 @@ isVal (TmAbs _) = True
 isVal (TmVar _) = True
 isVal _ = False
 
+isNormal :: Term -> Bool
+isNormal (TmApp (TmAbs _) _) = False
+isNormal _ = True
+
 -- |Strict small step evaluation of terms in the pure untyped lambda calculus.
 eval1 :: Term -> Term
 eval1 (TmApp (TmAbs t) v)
@@ -54,9 +58,9 @@ eval1 _ = error "NoRuleApplies"
 -- |Strict small step evaluation; evaluate abstraction body.
 evalMaybe :: Term -> Maybe Term
 evalMaybe (TmApp (TmAbs t) v)
-  | isVal v = Just $ termSubstTop v t
+  | isNormal v = Just $ termSubstTop v t
 evalMaybe (TmApp v t)
-  | isVal v = TmApp v <$> evalMaybe t
+  | isNormal v = TmApp v <$> evalMaybe t
 evalMaybe (TmApp t1 t2) = flip TmApp t2 <$> evalMaybe t1
 evalMaybe (TmAbs t) = TmAbs <$> evalMaybe t
 evalMaybe _ = Nothing
@@ -78,19 +82,19 @@ toNormalForm t = lastJust (iterate (>>= evalMaybe) (Just t))
 c0 :: Term
 c0 = TmAbs $ TmAbs $ TmVar 0
 
--- |Church numerals
+-- |Church numerals (using a Haskell list is cheating of course)
 churchNumerals :: [Term]
-churchNumerals = iterate (toNormalForm . TmApp scc) c0
+churchNumerals = iterate (TmApp scc) c0
 
--- |Church Boolean: True
+-- |Church boolean: True
 tru :: Term
 tru = TmAbs $ TmAbs $ TmVar 1
 
--- |Church Boolean: False
+-- |Church boolean: False
 fls :: Term
 fls = TmAbs $ TmAbs $ TmVar 0
 
--- |Logical conjunction on Church Booleans
+-- |Logical conjunction on Church booleans
 tmAnd :: Term
 tmAnd = TmAbs $ TmAbs $ TmApp (TmApp (TmVar 1) (TmVar 0)) fls
 
@@ -98,3 +102,34 @@ tmAnd = TmAbs $ TmAbs $ TmApp (TmApp (TmVar 1) (TmVar 0)) fls
 scc :: Term
 scc = TmAbs $ TmAbs $ TmAbs $ TmApp (TmVar 1)
   (TmApp (TmApp (TmVar 2) (TmVar 1)) (TmVar 0))
+
+-- |Addition of Church numerals
+plus :: Term
+plus = TmAbs $ TmAbs $ TmAbs $ TmAbs $
+  TmApp (TmApp (TmVar 3) (TmVar 1))
+        (TmApp (TmApp (TmVar 2) (TmVar 1)) (TmVar 0))
+
+-- |Multiplication of Church numerals
+times :: Term
+times = TmAbs $ TmAbs $ TmAbs $
+  TmApp (TmVar 2) (TmApp (TmVar 1) (TmVar 0))
+
+-- |Evaluates to `tru` if applied to `c0`, to `fls` on any other Church numeral.
+iszro :: Term
+iszro = TmAbs (TmApp (TmApp (TmVar 0) (TmAbs fls)) tru)
+
+-- |Encode a pair of terms by applying pair to them.
+pair :: Term
+pair = TmAbs $ TmAbs $ TmAbs $ TmApp (TmApp (TmVar 0) (TmVar 2)) (TmVar 1)
+
+-- |Evaluates to the first element when applied to a pair.
+tmFst :: Term
+tmFst = TmAbs (TmApp tru (TmVar 0))
+
+-- |Evaluates to the second element when applied to a pair.
+tmSnd :: Term
+tmSnd = TmAbs (TmApp fls (TmVar 0))
+
+-- Would expect this to evaluate to `tru`, but doesn't
+testCase :: Term
+testCase = toNormalForm $ TmApp tmFst (TmApp (TmApp pair tru) fls)
