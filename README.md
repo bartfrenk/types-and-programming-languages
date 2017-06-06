@@ -1,7 +1,7 @@
 # Description
 
-This repository contains notes and Haskell programs written for
-studying [Types and Programming Languages](http://a.co/2c62ihn "Amazon") by
+This repository contains notes and Haskell programs written to
+study [Types and Programming Languages](http://a.co/2c62ihn "Amazon") by
 Benjamin Pierce.
 
 The `implementations` folder holds a Stack project that currently has implementations for:
