@@ -1,4 +1,4 @@
-{-|Implementation of the pure untyped lambda calculus, as presented in Chapter 7
+{-| Implementation of the pure untyped lambda calculus, as presented in Chapter 7
  of Types and Programming Languages. This is somewhat of a simplication of the
  ML implementation presented in Chapter 7, as no information for debugging or
  printing is tracked.
